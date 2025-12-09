@@ -47,7 +47,6 @@
       margin: 0 auto;
     }
     
-    /* Connection Status Badge */
     .connection-status {
       position: fixed;
       top: 20px;
@@ -69,7 +68,6 @@
       border-color: #ff4500;
     }
     
-    /* Landing Page */
     .landing-page {
       display: flex;
       flex-direction: column;
@@ -275,7 +273,6 @@
       color: #ffd700;
     }
     
-    /* Dashboard Specific */
     .dashboard-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -449,26 +446,6 @@
       background: rgba(255, 69, 0, 0.1);
     }
     
-    .gas-status {
-      display: inline-block;
-      padding: 6px 15px;
-      border-radius: 20px;
-      font-size: 0.9em;
-      font-weight: 600;
-    }
-    
-    .gas-yes { 
-      background: rgba(255, 69, 0, 0.3); 
-      color: #ff6b6b;
-      border: 2px solid #ff6b6b;
-    }
-    
-    .gas-no { 
-      background: rgba(50, 205, 50, 0.2); 
-      color: #32cd32;
-      border: 2px solid #32cd32;
-    }
-    
     .chart-container {
       width: 100%;
       height: 300px;
@@ -506,7 +483,6 @@
   </style>
 </head>
 <body>
-  <!-- Connection Status Badge -->
   <div class="connection-status" id="connectionStatus">
     🔄 Connecting to Firebase...
   </div>
@@ -541,7 +517,7 @@
       <div class="card">
         <h2>📖 Tentang FIGS</h2>
         <div class="about-content">
-          <p><strong>FIGS (Fire Ignition Gas Sensor)</strong> adalah sistem monitoring deteksi dini kebocoran gas LPG dan api pada lingkungan dapur berbasis mikrokontroler ESP32.</p>
+          <p><strong>FIGS (Fire Ignition Gas Sensor)</strong> adalah sistem monitoring deteksi dini kebocoran gas LPG dan api pada lingkungan dapur berbasis mikrokontroler ESP32 dengan Firebase cloud storage.</p>
           
           <h3>🎯 Latar Belakang</h3>
           <p>1. Kebocoran gas LPG adalah penyebab umum kebakaran rumah tangga yang sering tidak terdeteksi hingga terlambat karena deteksi manual tidak efektif 24/7, terutama saat tidur atau rumah kosong.</p>
@@ -576,9 +552,9 @@
           
           <h3>✨ Fitur Utama</h3>
           <p>• <strong>Real-time monitoring</strong>: Pemantauan suhu dan gas secara kontinyu<br>
-          • <strong>Cloud storage</strong>: Data tersimpan di Firebase Realtime Database<br>
-          • <strong>Multi-sensor detection</strong>: Deteksi gas (MQ-6) dan panas (AMG8833)<br>
-          • <strong>Web dashboard</strong>: Interface monitoring berbasis web<br>
+          • <strong>Thermal heatmap</strong>: Visualisasi distribusi panas 8x8 pixels<br>
+          • <strong>Firebase cloud storage</strong>: Data tersimpan permanen di cloud<br>
+          • <strong>Remote monitoring</strong>: Dashboard bisa diakses dari mana saja<br>
           • <strong>Telegram notification</strong>: Notifikasi instant ke smartphone<br>
           • <strong>Visual & audio alarm</strong>: Peringatan melalui buzzer dan indikator visual</p>
           
@@ -607,7 +583,7 @@
           
           <div class="tutorial-step">
             <h3>Step 2: Koneksi WiFi</h3>
-            <p>ESP32 akan otomatis connect ke WiFi yang sudah dikonfigurasi. OLED display akan menampilkan status koneksi dan IP address sistem.</p>
+            <p>ESP32 akan otomatis connect ke WiFi yang sudah dikonfigurasi. OLED display akan menampilkan status koneksi dan mulai streaming data ke Firebase.</p>
           </div>
           
           <div class="tutorial-step">
@@ -618,25 +594,24 @@
           <div class="tutorial-step">
             <h3>Step 4: Monitoring Real-Time</h3>
             <p>Setelah warming up selesai, sistem akan mulai monitoring:<br><br>
-            • <strong>Status Normal</strong>: Buzzer off, data streaming ke Firebase<br>
+            • <strong>Status Normal</strong>: Data streaming ke Firebase, buzzer off<br>
             • <strong>Gas Detected</strong>: Buzzer berbunyi, notifikasi Telegram terkirim<br>
             • <strong>Fire Detected</strong>: Buzzer bunyi terus-menerus, alert maksimal</p>
           </div>
           
           <div class="tutorial-step">
-            <h3>Step 5: Akses Web Dashboard</h3>
-            <p>Buka website dashboard di:<br>
-            <code>https://graciahariandja.github.io/FIGS_Kelompok_9_Despro/</code></p>
-            <p>Dashboard menampilkan:<br>
-            • Status sensor real-time dari Firebase<br>
-            • History deteksi kebakaran dan gas<br>
-            • Grafik monitoring temperature & gas events<br>
-            • Bisa diakses dari mana saja (remote monitoring)</p>
+            <h3>Step 5: Akses Dashboard</h3>
+            <p>Buka website dashboard (GitHub Pages) untuk melihat data real-time:<br>
+            • Thermal heatmap 8x8 pixel dari sensor AMG8833<br>
+            • Status gas detection dari sensor MQ-6<br>
+            • History log fire & gas events<br>
+            • Grafik monitoring temperature trends<br>
+            • Bisa diakses dari device apapun (laptop, HP, tablet)</p>
           </div>
           
           <div class="tutorial-step">
             <h3>Step 6: Notifikasi Telegram</h3>
-            <p>Jika bahaya terdeteksi, sistem akan mengirim notifikasi ke Telegram dengan informasi detail status sensor dan instruksi keamanan.</p>
+            <p>Jika bahaya terdeteksi, sistem akan mengirim notifikasi ke Telegram dengan informasi detail status sensor dan instruksi keamanan darurat.</p>
           </div>
           
           <div class="tutorial-step">
@@ -657,6 +632,36 @@
       <h1 class="page-title">Dashboard FIGS - Live Data</h1>
       
       <div class="dashboard-grid">
+        <!-- Thermal Heatmap -->
+        <div class="card">
+          <h2>🌡️ Thermal Heatmap (AMG8833)</h2>
+          <div class="heatmap-container">
+            <div id="grid"></div>
+            <div class="legend">
+              <div class="legend-item">
+                <div class="legend-color" style="background: rgb(0,0,255)"></div>
+                <span>20°C</span>
+              </div>
+              <div class="legend-item">
+                <div class="legend-color" style="background: rgb(0,255,255)"></div>
+                <span>25°C</span>
+              </div>
+              <div class="legend-item">
+                <div class="legend-color" style="background: rgb(0,255,0)"></div>
+                <span>30°C</span>
+              </div>
+              <div class="legend-item">
+                <div class="legend-color" style="background: rgb(255,255,0)"></div>
+                <span>35°C</span>
+              </div>
+              <div class="legend-item">
+                <div class="legend-color" style="background: rgb(255,0,0)"></div>
+                <span>40°C+</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        
         <!-- Status Panel -->
         <div class="card">
           <h2>📊 System Status</h2>
@@ -674,11 +679,7 @@
               <div class="status-value" id="uptimeValue">--</div>
             </div>
           </div>
-        </div>
-        
-        <!-- Stats -->
-        <div class="card">
-          <h2>📈 Statistics</h2>
+          
           <div class="stats-grid">
             <div class="stat-box">
               <div class="stat-value" id="totalFireEvents">0</div>
@@ -687,10 +688,6 @@
             <div class="stat-box">
               <div class="stat-value" id="totalGasEvents">0</div>
               <div class="stat-label">Gas Events</div>
-            </div>
-            <div class="stat-box">
-              <div class="stat-value" id="avgTemp">--</div>
-              <div class="stat-label">Avg Temp (°C)</div>
             </div>
           </div>
         </div>
@@ -749,26 +746,18 @@
   
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0"></script>
   <script>
-    // ================== FIREBASE CONFIG ==================
-    // ⚠️ GANTI URL INI SESUAI FIREBASE LO!
+    // ==================== FIREBASE CONFIG ====================
     const FIREBASE_URL = 'https://figs-despro-default-rtdb.firebaseio.com';
     
-    // ================== STATE MANAGEMENT ==================
+    // ==================== STATE ====================
     let fireChart, gasChart;
     let lastFireWarning = false;
     let lastGasWarning = false;
     
-    const fireChartData = {
-      labels: [],
-      temps: []
-    };
+    const fireChartData = { labels: [], temps: [] };
+    const gasChartData = { labels: [], detections: [] };
     
-    const gasChartData = {
-      labels: [],
-      detections: []
-    };
-    
-    // ================== PAGE NAVIGATION ==================
+    // ==================== PAGE NAVIGATION ====================
     function showPage(pageId) {
       document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
       document.getElementById(pageId).classList.add('active');
@@ -780,19 +769,19 @@
       }
     }
     
-    // ================== FIREBASE FUNCTIONS ==================
-    async function fetchFirebaseData(path) {
+    // ==================== FIREBASE FETCH ====================
+    async function fetchFirebase(path) {
       try {
-        const response = await fetch(`${FIREBASE_URL}${path}.json`);
-        if (!response.ok) throw new Error('Firebase fetch failed');
-        return await response.json();
-      } catch (error) {
-        console.error('Firebase error:', error);
+        const res = await fetch(`${FIREBASE_URL}${path}.json`);
+        if (!res.ok) throw new Error('Fetch failed');
+        return await res.json();
+      } catch (err) {
+        console.error('Firebase error:', err);
         return null;
       }
     }
     
-    function formatTimestamp(seconds) {
+    function formatTime(seconds) {
       const date = new Date(seconds * 1000);
       return date.toLocaleString('id-ID', {
         day: '2-digit',
@@ -805,16 +794,62 @@
     }
     
     function formatUptime(seconds) {
-      const hours = Math.floor(seconds / 3600);
-      const minutes = Math.floor((seconds % 3600) / 60);
-      const secs = seconds % 60;
-      return `${hours}h ${minutes}m ${secs}s`;
+      const h = Math.floor(seconds / 3600);
+      const m = Math.floor((seconds % 3600) / 60);
+      const s = seconds % 60;
+      return `${h}h ${m}m ${s}s`;
     }
     
-    // ================== UPDATE FUNCTIONS ==================
+    // ==================== THERMAL HEATMAP ====================
+    function tempToColor(t) {
+      const tMin = 20.0;
+      const tMax = 40.0;
+      let v = (t - tMin) / (tMax - tMin);
+      if (v < 0) v = 0;
+      if (v > 1) v = 1;
+      
+      let r, g, b;
+      if (v < 0.25) {
+        v /= 0.25;
+        r = 0; g = v * 255; b = 255;
+      } else if (v < 0.5) {
+        v = (v - 0.25) / 0.25;
+        r = 0; g = 255; b = 255 - v * 255;
+      } else if (v < 0.75) {
+        v = (v - 0.5) / 0.25;
+        r = v * 255; g = 255; b = 0;
+      } else {
+        v = (v - 0.75) / 0.25;
+        r = 255; g = 255 - v * 255; b = 0;
+      }
+      return `rgb(${Math.round(r)},${Math.round(g)},${Math.round(b)})`;
+    }
+    
+    function initHeatmap() {
+      const grid = document.getElementById('grid');
+      grid.innerHTML = '';
+      for (let i = 0; i < 64; i++) {
+        const div = document.createElement('div');
+        div.className = 'cell';
+        grid.appendChild(div);
+      }
+    }
+    
+    async function updateHeatmap() {
+      const thermal = await fetchFirebase('/sensors/thermal');
+      if (!thermal) return;
+      
+      const cells = document.getElementsByClassName('cell');
+      for (let i = 0; i < 64; i++) {
+        const temp = thermal[i] || 25;
+        cells[i].style.backgroundColor = tempToColor(temp);
+      }
+    }
+    
+    // ==================== UPDATE STATUS ====================
     async function updateStatus() {
-      const sensors = await fetchFirebaseData('/sensors/current');
-      const status = await fetchFirebaseData('/status');
+      const sensors = await fetchFirebase('/sensors/current');
+      const status = await fetchFirebase('/status');
       
       if (!sensors || !status) {
         document.getElementById('connectionStatus').className = 'connection-status error';
@@ -822,31 +857,28 @@
         return;
       }
       
-      // Connection OK
       document.getElementById('connectionStatus').className = 'connection-status connected';
       document.getElementById('connectionStatus').textContent = '✅ Live Data';
       
-      // Temperature Status
+      // Temperature
       const tempStatus = document.getElementById('tempStatus');
       const tempValue = document.getElementById('tempValue');
-      
       if (status.fireWarning) {
         tempStatus.className = 'status-item warning';
         tempValue.textContent = `🔥 ${sensors.maxTemp}°C - FIRE WARNING!`;
         tempValue.style.color = '#ff6b6b';
       } else {
         tempStatus.className = 'status-item safe';
-        tempValue.textContent = `Min: ${sensors.minTemp}°C | Max: ${sensors.maxTemp}°C | Avg: ${sensors.avgTemp}°C`;
+        tempValue.textContent = `Min: ${sensors.minTemp}°C | Max: ${sensors.maxTemp}°C`;
         tempValue.style.color = '#51cf66';
       }
       
-      // Gas Status
+      // Gas
       const gasStatus = document.getElementById('gasStatus');
       const gasValue = document.getElementById('gasValue');
-      
       if (sensors.warmupRemain > 0) {
         gasStatus.className = 'status-item';
-        gasValue.textContent = `⏳ Calibrating... ${sensors.warmupRemain}s remaining`;
+        gasValue.textContent = `⏳ Calibrating... ${sensors.warmupRemain}s`;
         gasValue.style.color = '#4ecdc4';
       } else if (status.gasWarning) {
         gasStatus.className = 'status-item warning';
@@ -858,15 +890,12 @@
         gasValue.style.color = '#51cf66';
       }
       
-      // Uptime
-      document.getElementById('uptimeValue').textContent = formatUptime(status.uptime);
-      
       // Stats
+      document.getElementById('uptimeValue').textContent = formatUptime(status.uptime);
       document.getElementById('totalFireEvents').textContent = status.fireEventCount || 0;
       document.getElementById('totalGasEvents').textContent = status.gasEventCount || 0;
-      document.getElementById('avgTemp').textContent = sensors.avgTemp ? sensors.avgTemp.toFixed(1) : '--';
       
-      // Update charts if status changed
+      // Charts
       if (status.fireWarning && !lastFireWarning) {
         updateFireChart(sensors.maxTemp);
       }
@@ -878,26 +907,26 @@
       lastGasWarning = status.gasWarning;
     }
     
+    // ==================== HISTORY ====================
     async function updateFireHistory() {
-      const fireEvents = await fetchFirebaseData('/events/fire');
-      if (!fireEvents) return;
+      const events = await fetchFirebase('/events/fire');
+      if (!events) return;
       
       const tbody = document.querySelector('#fireTable tbody');
       tbody.innerHTML = '';
       
-      const events = Object.values(fireEvents).reverse().slice(0, 50);
-      
-      if (events.length === 0) {
+      const arr = Object.values(events).reverse().slice(0, 50);
+      if (arr.length === 0) {
         tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; opacity: 0.6;">No events yet</td></tr>';
         return;
       }
       
-      events.forEach(event => {
+      arr.forEach(e => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
-          <td>${event.eventId}</td>
-          <td>${formatTimestamp(event.timestamp)}</td>
-          <td style="color: #ff6b6b; font-weight: bold;">${event.maxTemp.toFixed(1)}°C</td>
+          <td>${e.eventId}</td>
+          <td>${formatTime(e.timestamp)}</td>
+          <td style="color: #ff6b6b; font-weight: bold;">${e.maxTemp.toFixed(1)}°C</td>
           <td><span style="color: #ff6b6b;">⚠️ Fire Detected</span></td>
         `;
         tbody.appendChild(tr);
@@ -905,38 +934,30 @@
     }
     
     async function updateGasHistory() {
-      const gasEvents = await fetchFirebaseData('/events/gas');
-      if (!gasEvents) return;
+      const events = await fetchFirebase('/events/gas');
+      if (!events) return;
       
       const tbody = document.querySelector('#gasTable tbody');
       tbody.innerHTML = '';
       
-      const events = Object.values(gasEvents).reverse().slice(0, 50);
-      
-      if (events.length === 0) {
+      const arr = Object.values(events).reverse().slice(0, 50);
+      if (arr.length === 0) {
         tbody.innerHTML = '<tr><td colspan="3" style="text-align: center; opacity: 0.6;">No events yet</td></tr>';
         return;
       }
       
-      events.forEach(event => {
+      arr.forEach(e => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
-          <td>${event.eventId}</td>
-          <td>${formatTimestamp(event.timestamp)}</td>
+          <td>${e.eventId}</td>
+          <td>${formatTime(e.timestamp)}</td>
           <td><span style="color: #ffb86c;">⚠️ Gas Detected</span></td>
         `;
         tbody.appendChild(tr);
       });
     }
     
-    // ================== DASHBOARD INIT ==================
-    function initDashboard() {
-      initCharts();
-      mainLoop();
-      setInterval(mainLoop, 2000); // Update every 2 seconds
-    }
-    
-    // ================== CHART FUNCTIONS ==================
+    // ==================== CHARTS ====================
     function initCharts() {
       const fireCtx = document.getElementById('fireChart').getContext('2d');
       const gasCtx = document.getElementById('gasChart').getContext('2d');
@@ -958,18 +979,10 @@
         options: {
           responsive: true,
           maintainAspectRatio: false,
-          plugins: {
-            legend: { labels: { color: '#eee', font: { size: 14 } } }
-          },
+          plugins: { legend: { labels: { color: '#eee', font: { size: 14 } } } },
           scales: {
-            y: { 
-              ticks: { color: '#eee' },
-              grid: { color: 'rgba(255,255,255,0.1)' }
-            },
-            x: { 
-              ticks: { color: '#eee' },
-              grid: { color: 'rgba(255,255,255,0.1)' }
-            }
+            y: { ticks: { color: '#eee' }, grid: { color: 'rgba(255,255,255,0.1)' } },
+            x: { ticks: { color: '#eee' }, grid: { color: 'rgba(255,255,255,0.1)' } }
           }
         }
       });
@@ -989,18 +1002,10 @@
         options: {
           responsive: true,
           maintainAspectRatio: false,
-          plugins: {
-            legend: { labels: { color: '#eee', font: { size: 14 } } }
-          },
+          plugins: { legend: { labels: { color: '#eee', font: { size: 14 } } } },
           scales: {
-            y: { 
-              ticks: { color: '#eee', stepSize: 1 },
-              grid: { color: 'rgba(255,255,255,0.1)' }
-            },
-            x: { 
-              ticks: { color: '#eee' },
-              grid: { color: 'rgba(255,255,255,0.1)' }
-            }
+            y: { ticks: { color: '#eee', stepSize: 1 }, grid: { color: 'rgba(255,255,255,0.1)' } },
+            x: { ticks: { color: '#eee' }, grid: { color: 'rgba(255,255,255,0.1)' } }
           }
         }
       });
@@ -1010,12 +1015,10 @@
       const now = new Date().toLocaleTimeString();
       fireChartData.labels.push(now);
       fireChartData.temps.push(temp);
-      
       if (fireChartData.labels.length > 20) {
         fireChartData.labels.shift();
         fireChartData.temps.shift();
       }
-      
       if (fireChart) fireChart.update();
     }
     
@@ -1023,25 +1026,30 @@
       const now = new Date().toLocaleTimeString();
       gasChartData.labels.push(now);
       gasChartData.detections.push(1);
-      
       if (gasChartData.labels.length > 20) {
         gasChartData.labels.shift();
         gasChartData.detections.shift();
       }
-      
       if (gasChart) gasChart.update();
     }
     
-    // ================== MAIN LOOP ==================
+    // ==================== DASHBOARD INIT ====================
+    function initDashboard() {
+      initHeatmap();
+      initCharts();
+      mainLoop();
+      setInterval(mainLoop, 2000);
+    }
+    
     async function mainLoop() {
+      await updateHeatmap();
       await updateStatus();
       await updateFireHistory();
       await updateGasHistory();
     }
     
-    // ================== INIT ON LOAD ==================
-    console.log('🔥 FIGS Dashboard initialized');
-    console.log('📡 Firebase URL:', FIREBASE_URL);
+    console.log('🔥 FIGS Dashboard Ready');
+    console.log('📡 Firebase:', FIREBASE_URL);
   </script>
 </body>
 </html>
