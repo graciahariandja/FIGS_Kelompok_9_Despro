@@ -47,6 +47,28 @@
       margin: 0 auto;
     }
     
+    /* Connection Status Badge */
+    .connection-status {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: rgba(0, 0, 0, 0.8);
+      padding: 10px 20px;
+      border-radius: 10px;
+      border: 2px solid #ffa500;
+      z-index: 1000;
+      font-size: 0.9em;
+      backdrop-filter: blur(10px);
+    }
+    
+    .connection-status.connected {
+      border-color: #32cd32;
+    }
+    
+    .connection-status.error {
+      border-color: #ff4500;
+    }
+    
     /* Landing Page */
     .landing-page {
       display: flex;
@@ -395,6 +417,8 @@
       overflow-x: auto;
       margin-top: 20px;
       border-radius: 10px;
+      max-height: 400px;
+      overflow-y: auto;
     }
     
     table {
@@ -412,6 +436,9 @@
       background: rgba(255, 69, 0, 0.2);
       font-weight: 600;
       color: #ffa500;
+      position: sticky;
+      top: 0;
+      z-index: 10;
     }
     
     tbody tr {
@@ -479,6 +506,11 @@
   </style>
 </head>
 <body>
+  <!-- Connection Status Badge -->
+  <div class="connection-status" id="connectionStatus">
+    🔄 Connecting to Firebase...
+  </div>
+
   <div class="container">
     <!-- Landing Page -->
     <div id="landing" class="page active">
@@ -544,7 +576,7 @@
           
           <h3>✨ Fitur Utama</h3>
           <p>• <strong>Real-time monitoring</strong>: Pemantauan suhu dan gas secara kontinyu<br>
-          • <strong>Thermal heatmap</strong>: Visualisasi distribusi panas 8x8 pixels<br>
+          • <strong>Cloud storage</strong>: Data tersimpan di Firebase Realtime Database<br>
           • <strong>Multi-sensor detection</strong>: Deteksi gas (MQ-6) dan panas (AMG8833)<br>
           • <strong>Web dashboard</strong>: Interface monitoring berbasis web<br>
           • <strong>Telegram notification</strong>: Notifikasi instant ke smartphone<br>
@@ -570,7 +602,7 @@
         <div class="about-content">
           <div class="tutorial-step">
             <h3>Step 1: Persiapan Alat</h3>
-            <p>Pastikan semua komponen terpasang dengan benar sesuai wiring diagram. Hubungkan ESP32 ke power supply 5V dan tunggu hingga sistem boot (LED akan berkedip).</p>
+            <p>Pastikan semua komponen terpasang dengan benar sesuai wiring diagram. Hubungkan ESP32 ke power supply 5V dan tunggu hingga sistem boot.</p>
           </div>
           
           <div class="tutorial-step">
@@ -586,30 +618,25 @@
           <div class="tutorial-step">
             <h3>Step 4: Monitoring Real-Time</h3>
             <p>Setelah warming up selesai, sistem akan mulai monitoring:<br><br>
-            • <strong>Status Normal</strong>: LED hijau menyala, buzzer off<br>
+            • <strong>Status Normal</strong>: Buzzer off, data streaming ke Firebase<br>
             • <strong>Gas Detected</strong>: Buzzer berbunyi, notifikasi Telegram terkirim<br>
             • <strong>Fire Detected</strong>: Buzzer bunyi terus-menerus, alert maksimal</p>
           </div>
           
           <div class="tutorial-step">
-            <h3>Step 5: Notifikasi Telegram</h3>
-            <p>Jika bahaya terdeteksi, sistem akan mengirim notifikasi ke Telegram dengan informasi:</p>
-            <p>• Status bahaya (Gas/Fire)<br>
-            • Nilai sensor thermal maksimal<br>
-            • Timestamp deteksi<br>
-            • Instruksi keamanan</p>
+            <h3>Step 5: Akses Web Dashboard</h3>
+            <p>Buka website dashboard di:<br>
+            <code>https://graciahariandja.github.io/FIGS_Kelompok_9_Despro/</code></p>
+            <p>Dashboard menampilkan:<br>
+            • Status sensor real-time dari Firebase<br>
+            • History deteksi kebakaran dan gas<br>
+            • Grafik monitoring temperature & gas events<br>
+            • Bisa diakses dari mana saja (remote monitoring)</p>
           </div>
           
           <div class="tutorial-step">
-            <h3>Step 6: Web Dashboard</h3>
-            <p>Akses web dashboard melalui browser dengan cara:</p>
-            <p>• Ketik IP address yang ditampilkan di OLED<br>
-            • Atau gunakan: <code>http://kelompok9gasandfire.local/</code></p>
-            <p>Dashboard menampilkan:<br>
-            • Thermal heatmap real-time 8x8 pixel<br>
-            • Status sensor gas (Yes/No detection)<br>
-            • History deteksi kebakaran dan gas<br>
-            • Grafik monitoring temperature & gas events</p>
+            <h3>Step 6: Notifikasi Telegram</h3>
+            <p>Jika bahaya terdeteksi, sistem akan mengirim notifikasi ke Telegram dengan informasi detail status sensor dan instruksi keamanan.</p>
           </div>
           
           <div class="tutorial-step">
@@ -627,39 +654,9 @@
     <!-- Dashboard Page -->
     <div id="dashboard" class="page">
       <button class="back-btn" onclick="showPage('landing')">← Back to Menu</button>
-      <h1 class="page-title">Dashboard FIGS</h1>
+      <h1 class="page-title">Dashboard FIGS - Live Data</h1>
       
       <div class="dashboard-grid">
-        <!-- Thermal Heatmap -->
-        <div class="card">
-          <h2>🌡️ Thermal Heatmap (AMG8833)</h2>
-          <div class="heatmap-container">
-            <div id="grid"></div>
-            <div class="legend">
-              <div class="legend-item">
-                <div class="legend-color" style="background: rgb(0,0,255)"></div>
-                <span>20°C</span>
-              </div>
-              <div class="legend-item">
-                <div class="legend-color" style="background: rgb(0,255,255)"></div>
-                <span>25°C</span>
-              </div>
-              <div class="legend-item">
-                <div class="legend-color" style="background: rgb(0,255,0)"></div>
-                <span>30°C</span>
-              </div>
-              <div class="legend-item">
-                <div class="legend-color" style="background: rgb(255,255,0)"></div>
-                <span>35°C</span>
-              </div>
-              <div class="legend-item">
-                <div class="legend-color" style="background: rgb(255,0,0)"></div>
-                <span>40°C+</span>
-              </div>
-            </div>
-          </div>
-        </div>
-        
         <!-- Status Panel -->
         <div class="card">
           <h2>📊 System Status</h2>
@@ -672,12 +669,16 @@
               <div class="status-label">Gas Detection (MQ-6)</div>
               <div class="status-value" id="gasValue">Loading...</div>
             </div>
-            <div class="status-item" id="warmupStatus">
-              <div class="status-label">Sensor Calibration</div>
-              <div class="status-value" id="warmupValue">Ready</div>
+            <div class="status-item" id="uptimeStatus">
+              <div class="status-label">System Uptime</div>
+              <div class="status-value" id="uptimeValue">--</div>
             </div>
           </div>
-          
+        </div>
+        
+        <!-- Stats -->
+        <div class="card">
+          <h2>📈 Statistics</h2>
           <div class="stats-grid">
             <div class="stat-box">
               <div class="stat-value" id="totalFireEvents">0</div>
@@ -686,6 +687,10 @@
             <div class="stat-box">
               <div class="stat-value" id="totalGasEvents">0</div>
               <div class="stat-label">Gas Events</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-value" id="avgTemp">--</div>
+              <div class="stat-label">Avg Temp (°C)</div>
             </div>
           </div>
         </div>
@@ -699,12 +704,16 @@
             <thead>
               <tr>
                 <th>#</th>
-                <th>Date & Time</th>
+                <th>Timestamp</th>
                 <th>Max Temp (°C)</th>
                 <th>Status</th>
               </tr>
             </thead>
-            <tbody></tbody>
+            <tbody>
+              <tr>
+                <td colspan="4" style="text-align: center; opacity: 0.6;">No events yet</td>
+              </tr>
+            </tbody>
           </table>
         </div>
         <div class="chart-container">
@@ -720,12 +729,15 @@
             <thead>
               <tr>
                 <th>#</th>
-                <th>Date & Time</th>
-                <th>Gas Detected</th>
+                <th>Timestamp</th>
                 <th>Status</th>
               </tr>
             </thead>
-            <tbody></tbody>
+            <tbody>
+              <tr>
+                <td colspan="3" style="text-align: center; opacity: 0.6;">No events yet</td>
+              </tr>
+            </tbody>
           </table>
         </div>
         <div class="chart-container">
@@ -737,7 +749,26 @@
   
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0"></script>
   <script>
-    // Page Navigation
+    // ================== FIREBASE CONFIG ==================
+    // ⚠️ GANTI URL INI SESUAI FIREBASE LO!
+    const FIREBASE_URL = 'https://figs-despro-default-rtdb.firebaseio.com';
+    
+    // ================== STATE MANAGEMENT ==================
+    let fireChart, gasChart;
+    let lastFireWarning = false;
+    let lastGasWarning = false;
+    
+    const fireChartData = {
+      labels: [],
+      temps: []
+    };
+    
+    const gasChartData = {
+      labels: [],
+      detections: []
+    };
+    
+    // ================== PAGE NAVIGATION ==================
     function showPage(pageId) {
       document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
       document.getElementById(pageId).classList.add('active');
@@ -749,75 +780,167 @@
       }
     }
     
-    // Initialize Dashboard
-    function initDashboard() {
-      initHeatmap();
-      initCharts();
-      startMonitoring();
-    }
-    
-    // Initialize heatmap grid
-    function initHeatmap() {
-      const grid = document.getElementById('grid');
-      grid.innerHTML = '';
-      for (let i = 0; i < 64; i++) {
-        const div = document.createElement('div');
-        div.className = 'cell';
-        grid.appendChild(div);
+    // ================== FIREBASE FUNCTIONS ==================
+    async function fetchFirebaseData(path) {
+      try {
+        const response = await fetch(`${FIREBASE_URL}${path}.json`);
+        if (!response.ok) throw new Error('Firebase fetch failed');
+        return await response.json();
+      } catch (error) {
+        console.error('Firebase error:', error);
+        return null;
       }
     }
     
-    // State management
-    let fireCount = 0;
-    let gasCount = 0;
-    let lastFireActive = false;
-    let lastGasActive = false;
-    const MAX_HISTORY = 50;
-    let monitoringInterval;
+    function formatTimestamp(seconds) {
+      const date = new Date(seconds * 1000);
+      return date.toLocaleString('id-ID', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      });
+    }
     
-    // Chart data
-    const fireChartData = {
-      labels: [],
-      temps: []
-    };
+    function formatUptime(seconds) {
+      const hours = Math.floor(seconds / 3600);
+      const minutes = Math.floor((seconds % 3600) / 60);
+      const secs = seconds % 60;
+      return `${hours}h ${minutes}m ${secs}s`;
+    }
     
-    const gasChartData = {
-      labels: [],
-      detections: []
-    };
-    
-    let fireChart, gasChart;
-    
-    // Color mapping function
-    function tempToColor(t) {
-      const tMin = 20.0;
-      const tMax = 40.0;
-      let v = (t - tMin) / (tMax - tMin);
-      if (v < 0) v = 0;
-      if (v > 1) v = 1;
-
-      let r, g, b;
-      if (v < 0.25) {
-        v /= 0.25;
-        r = 0; g = v * 255; b = 255;
-      } else if (v < 0.5) {
-        v = (v - 0.25) / 0.25;
-        r = 0; g = 255; b = 255 - v * 255;
-      } else if (v < 0.75) {
-        v = (v - 0.5) / 0.25;
-        r = v * 255; g = 255; b = 0;
+    // ================== UPDATE FUNCTIONS ==================
+    async function updateStatus() {
+      const sensors = await fetchFirebaseData('/sensors/current');
+      const status = await fetchFirebaseData('/status');
+      
+      if (!sensors || !status) {
+        document.getElementById('connectionStatus').className = 'connection-status error';
+        document.getElementById('connectionStatus').textContent = '❌ Connection Error';
+        return;
+      }
+      
+      // Connection OK
+      document.getElementById('connectionStatus').className = 'connection-status connected';
+      document.getElementById('connectionStatus').textContent = '✅ Live Data';
+      
+      // Temperature Status
+      const tempStatus = document.getElementById('tempStatus');
+      const tempValue = document.getElementById('tempValue');
+      
+      if (status.fireWarning) {
+        tempStatus.className = 'status-item warning';
+        tempValue.textContent = `🔥 ${sensors.maxTemp}°C - FIRE WARNING!`;
+        tempValue.style.color = '#ff6b6b';
       } else {
-        v = (v - 0.75) / 0.25;
-        r = 255; g = 255 - v * 255; b = 0;
+        tempStatus.className = 'status-item safe';
+        tempValue.textContent = `Min: ${sensors.minTemp}°C | Max: ${sensors.maxTemp}°C | Avg: ${sensors.avgTemp}°C`;
+        tempValue.style.color = '#51cf66';
       }
-      return `rgb(${Math.round(r)},${Math.round(g)},${Math.round(b)})`;
+      
+      // Gas Status
+      const gasStatus = document.getElementById('gasStatus');
+      const gasValue = document.getElementById('gasValue');
+      
+      if (sensors.warmupRemain > 0) {
+        gasStatus.className = 'status-item';
+        gasValue.textContent = `⏳ Calibrating... ${sensors.warmupRemain}s remaining`;
+        gasValue.style.color = '#4ecdc4';
+      } else if (status.gasWarning) {
+        gasStatus.className = 'status-item warning';
+        gasValue.textContent = '⚠️ GAS DETECTED';
+        gasValue.style.color = '#ffb86c';
+      } else {
+        gasStatus.className = 'status-item safe';
+        gasValue.textContent = '✓ No Gas Detected';
+        gasValue.style.color = '#51cf66';
+      }
+      
+      // Uptime
+      document.getElementById('uptimeValue').textContent = formatUptime(status.uptime);
+      
+      // Stats
+      document.getElementById('totalFireEvents').textContent = status.fireEventCount || 0;
+      document.getElementById('totalGasEvents').textContent = status.gasEventCount || 0;
+      document.getElementById('avgTemp').textContent = sensors.avgTemp ? sensors.avgTemp.toFixed(1) : '--';
+      
+      // Update charts if status changed
+      if (status.fireWarning && !lastFireWarning) {
+        updateFireChart(sensors.maxTemp);
+      }
+      if (status.gasWarning && !lastGasWarning) {
+        updateGasChart();
+      }
+      
+      lastFireWarning = status.fireWarning;
+      lastGasWarning = status.gasWarning;
     }
-
-    // Initialize Charts
+    
+    async function updateFireHistory() {
+      const fireEvents = await fetchFirebaseData('/events/fire');
+      if (!fireEvents) return;
+      
+      const tbody = document.querySelector('#fireTable tbody');
+      tbody.innerHTML = '';
+      
+      const events = Object.values(fireEvents).reverse().slice(0, 50);
+      
+      if (events.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; opacity: 0.6;">No events yet</td></tr>';
+        return;
+      }
+      
+      events.forEach(event => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${event.eventId}</td>
+          <td>${formatTimestamp(event.timestamp)}</td>
+          <td style="color: #ff6b6b; font-weight: bold;">${event.maxTemp.toFixed(1)}°C</td>
+          <td><span style="color: #ff6b6b;">⚠️ Fire Detected</span></td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+    
+    async function updateGasHistory() {
+      const gasEvents = await fetchFirebaseData('/events/gas');
+      if (!gasEvents) return;
+      
+      const tbody = document.querySelector('#gasTable tbody');
+      tbody.innerHTML = '';
+      
+      const events = Object.values(gasEvents).reverse().slice(0, 50);
+      
+      if (events.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="3" style="text-align: center; opacity: 0.6;">No events yet</td></tr>';
+        return;
+      }
+      
+      events.forEach(event => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${event.eventId}</td>
+          <td>${formatTimestamp(event.timestamp)}</td>
+          <td><span style="color: #ffb86c;">⚠️ Gas Detected</span></td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+    
+    // ================== DASHBOARD INIT ==================
+    function initDashboard() {
+      initCharts();
+      mainLoop();
+      setInterval(mainLoop, 2000); // Update every 2 seconds
+    }
+    
+    // ================== CHART FUNCTIONS ==================
     function initCharts() {
       const fireCtx = document.getElementById('fireChart').getContext('2d');
       const gasCtx = document.getElementById('gasChart').getContext('2d');
-
+      
       fireChart = new Chart(fireCtx, {
         type: 'line',
         data: {
@@ -850,7 +973,7 @@
           }
         }
       });
-
+      
       gasChart = new Chart(gasCtx, {
         type: 'bar',
         data: {
@@ -882,164 +1005,43 @@
         }
       });
     }
-
-    // Add fire history entry
-    function addFireHistory(maxT) {
-      fireCount++;
-      const now = new Date();
-      const timeStr = now.toLocaleTimeString();
-      const dateStr = now.toLocaleDateString();
+    
+    function updateFireChart(temp) {
+      const now = new Date().toLocaleTimeString();
+      fireChartData.labels.push(now);
+      fireChartData.temps.push(temp);
       
-      const tbody = document.querySelector('#fireTable tbody');
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td>${fireCount}</td>
-        <td>${dateStr} ${timeStr}</td>
-        <td style="color: #ff6b6b; font-weight: bold;">${maxT.toFixed(1)}°C</td>
-        <td><span style="color: #ff6b6b;">⚠️ Fire Detected</span></td>
-      `;
-      tbody.insertBefore(tr, tbody.firstChild);
-      
-      while (tbody.rows.length > MAX_HISTORY) {
-        tbody.removeChild(tbody.lastChild);
-      }
-      
-      // Update chart
-      fireChartData.labels.push(timeStr);
-      fireChartData.temps.push(maxT);
       if (fireChartData.labels.length > 20) {
         fireChartData.labels.shift();
         fireChartData.temps.shift();
       }
+      
       if (fireChart) fireChart.update();
-      
-      document.getElementById('totalFireEvents').textContent = fireCount;
     }
-
-    // Add gas history entry - SIMPLIFIED (Yes/No only)
-    function addGasHistory() {
-      gasCount++;
-      const now = new Date();
-      const timeStr = now.toLocaleTimeString();
-      const dateStr = now.toLocaleDateString();
-      
-      const tbody = document.querySelector('#gasTable tbody');
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td>${gasCount}</td>
-        <td>${dateStr} ${timeStr}</td>
-        <td><span class="gas-status gas-yes">YES</span></td>
-        <td><span style="color: #ffb86c;">⚠️ Gas Detected</span></td>
-      `;
-      tbody.insertBefore(tr, tbody.firstChild);
-      
-      while (tbody.rows.length > MAX_HISTORY) {
-        tbody.removeChild(tbody.lastChild);
-      }
-      
-      // Update chart
-      gasChartData.labels.push(timeStr);
+    
+    function updateGasChart() {
+      const now = new Date().toLocaleTimeString();
+      gasChartData.labels.push(now);
       gasChartData.detections.push(1);
+      
       if (gasChartData.labels.length > 20) {
         gasChartData.labels.shift();
         gasChartData.detections.shift();
       }
-      if (gasChart) gasChart.update();
       
-      document.getElementById('totalGasEvents').textContent = gasCount;
+      if (gasChart) gasChart.update();
     }
-
-    // Fetch data from ESP32
-    async function fetchData() {
-      try {
-        // In production, uncomment this:
-        // const res = await fetch('/data');
-        // const text = await res.text();
-        // const parts = text.trim().split(',');
-        
-        // DEMO MODE - Generate fake data
-        const parts = [];
-        for (let i = 0; i < 64; i++) {
-          parts.push((22 + Math.random() * 8).toFixed(2));
-        }
-        parts.push(Math.random() > 0.95 ? "1" : "0"); // gas (Yes/No)
-        parts.push("0"); // warmup
-        
-        const cells = document.getElementsByClassName('cell');
-        let minT = 999, maxT = -999;
-        
-        // Update heatmap
-        for (let i = 0; i < 64; i++) {
-          const t = parseFloat(parts[i]);
-          cells[i].style.backgroundColor = tempToColor(t);
-          if (t < minT) minT = t;
-          if (t > maxT) maxT = t;
-        }
-        
-        const gasDetected = parts[64] === "1";
-        const warmupRemain = parseInt(parts[65] || "0");
-        const fireActive = maxT > 40.0;
-        
-        // Update status panels
-        const tempStatus = document.getElementById('tempStatus');
-        const tempValue = document.getElementById('tempValue');
-        if (fireActive) {
-          tempStatus.className = 'status-item warning';
-          tempValue.textContent = `🔥 ${maxT.toFixed(1)}°C - FIRE WARNING!`;
-          tempValue.style.color = '#ff6b6b';
-        } else {
-          tempStatus.className = 'status-item safe';
-          tempValue.textContent = `Min: ${minT.toFixed(1)}°C | Max: ${maxT.toFixed(1)}°C`;
-          tempValue.style.color = '#51cf66';
-        }
-        
-        const gasStatus = document.getElementById('gasStatus');
-        const gasValue = document.getElementById('gasValue');
-        if (warmupRemain > 0) {
-          gasStatus.className = 'status-item';
-          gasValue.textContent = `⏳ Calibrating... ${warmupRemain}s remaining`;
-          gasValue.style.color = '#4ecdc4';
-        } else if (gasDetected) {
-          gasStatus.className = 'status-item warning';
-          gasValue.textContent = '⚠️ GAS DETECTED - YES';
-          gasValue.style.color = '#ffb86c';
-        } else {
-          gasStatus.className = 'status-item safe';
-          gasValue.textContent = '✓ Gas Detection - NO';
-          gasValue.style.color = '#51cf66';
-        }
-        
-        // Log events (rising edge detection)
-        if (fireActive && !lastFireActive) {
-          addFireHistory(maxT);
-        }
-        if (warmupRemain === 0 && gasDetected && !lastGasActive) {
-          addGasHistory();
-        }
-        
-        lastFireActive = fireActive;
-        lastGasActive = gasDetected;
-        
-      } catch (e) {
-        console.error('Fetch error:', e);
-        document.getElementById('tempValue').textContent = 'Connection Error';
-        document.getElementById('tempValue').style.color = '#ff6b6b';
-      }
+    
+    // ================== MAIN LOOP ==================
+    async function mainLoop() {
+      await updateStatus();
+      await updateFireHistory();
+      await updateGasHistory();
     }
-
-    // Start monitoring
-    function startMonitoring() {
-      if (monitoringInterval) clearInterval(monitoringInterval);
-      monitoringInterval = setInterval(fetchData, 800);
-      fetchData();
-    }
-
-    // Auto-init for demo
-    initHeatmap();
-    initCharts();
-    startMonitoring();
+    
+    // ================== INIT ON LOAD ==================
+    console.log('🔥 FIGS Dashboard initialized');
+    console.log('📡 Firebase URL:', FIREBASE_URL);
   </script>
 </body>
 </html>
-
-
