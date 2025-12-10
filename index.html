@@ -893,7 +893,7 @@
       lastGasWarning = status.gasWarning;
     }
     
-    // ==================== HISTORY (NO TIMESTAMP!) ====================
+    // ==================== HISTORY (NEWEST FIRST!) ====================
     async function updateFireHistory() {
       const events = await fetchFirebase('/events/fire');
       if (!events) return;
@@ -901,7 +901,11 @@
       const tbody = document.querySelector('#fireTable tbody');
       tbody.innerHTML = '';
       
-      const arr = Object.values(events).reverse().slice(0, 50);
+      // Sort by eventId DESCENDING (highest/newest first)
+      const arr = Object.values(events)
+        .sort((a, b) => b.eventId - a.eventId)
+        .slice(0, 50);
+      
       if (arr.length === 0) {
         tbody.innerHTML = '<tr><td colspan="3" style="text-align: center; opacity: 0.6;">No events yet</td></tr>';
         return;
@@ -925,7 +929,11 @@
       const tbody = document.querySelector('#gasTable tbody');
       tbody.innerHTML = '';
       
-      const arr = Object.values(events).reverse().slice(0, 50);
+      // Sort by eventId DESCENDING (highest/newest first)
+      const arr = Object.values(events)
+        .sort((a, b) => b.eventId - a.eventId)
+        .slice(0, 50);
+      
       if (arr.length === 0) {
         tbody.innerHTML = '<tr><td colspan="2" style="text-align: center; opacity: 0.6;">No events yet</td></tr>';
         return;
@@ -1034,7 +1042,7 @@
     
     console.log('🔥 FIGS Dashboard Ready');
     console.log('📡 Firebase:', FIREBASE_URL);
-    console.log('📝 Display: Event numbers only (no timestamps)');
+    console.log('📝 Event ordering: Newest first (descending by eventId)');
   </script>
 </body>
 </html>
