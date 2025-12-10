@@ -701,14 +701,13 @@
             <thead>
               <tr>
                 <th>#</th>
-                <th>Timestamp</th>
                 <th>Max Temp (°C)</th>
                 <th>Status</th>
               </tr>
             </thead>
             <tbody>
               <tr>
-                <td colspan="4" style="text-align: center; opacity: 0.6;">No events yet</td>
+                <td colspan="3" style="text-align: center; opacity: 0.6;">No events yet</td>
               </tr>
             </tbody>
           </table>
@@ -726,13 +725,12 @@
             <thead>
               <tr>
                 <th>#</th>
-                <th>Timestamp</th>
                 <th>Status</th>
               </tr>
             </thead>
             <tbody>
               <tr>
-                <td colspan="3" style="text-align: center; opacity: 0.6;">No events yet</td>
+                <td colspan="2" style="text-align: center; opacity: 0.6;">No events yet</td>
               </tr>
             </tbody>
           </table>
@@ -753,7 +751,6 @@
     let fireChart, gasChart;
     let lastFireWarning = false;
     let lastGasWarning = false;
-    let eventTimestampMap = new Map(); // Track real timestamps for events
     
     const fireChartData = { labels: [], temps: [] };
     const gasChartData = { labels: [], detections: [] };
@@ -782,67 +779,11 @@
       }
     }
     
-    // ==================== TIMESTAMP FORMATTING (AUTO FALLBACK) ====================
-    function formatTimeWIB(unixTimestamp, eventId) {
-      // CRITICAL FIX: Kalau timestamp invalid (<2020 atau epoch), pakai NOW!
-      const MIN_VALID_TIMESTAMP = 1577836800; // Unix timestamp untuk 2020-01-01
-      
-      let actualTimestamp = unixTimestamp;
-      
-      // Check if timestamp is invalid
-      if (!unixTimestamp || unixTimestamp < MIN_VALID_TIMESTAMP) {
-        // Check if we already have a real timestamp for this event
-        if (eventId && eventTimestampMap.has(eventId)) {
-          actualTimestamp = eventTimestampMap.get(eventId);
-        } else {
-          // Use current time as fallback
-          actualTimestamp = Math.floor(Date.now() / 1000);
-          
-          // Store this timestamp for consistency
-          if (eventId) {
-            eventTimestampMap.set(eventId, actualTimestamp);
-          }
-          
-          console.warn(`Invalid timestamp detected (${unixTimestamp}) for event ${eventId} - using current time: ${actualTimestamp}`);
-        }
-      } else {
-        // Valid timestamp - store it for future reference
-        if (eventId) {
-          eventTimestampMap.set(eventId, actualTimestamp);
-        }
-      }
-      
-      // Format dengan timezone WIB (Asia/Jakarta)
-      const date = new Date(actualTimestamp * 1000);
-      
-      return date.toLocaleString('id-ID', {
-        timeZone: 'Asia/Jakarta',
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: false
-      }) + ' WIB';
-    }
-    
     function formatUptime(seconds) {
       const h = Math.floor(seconds / 3600);
       const m = Math.floor((seconds % 3600) / 60);
       const s = seconds % 60;
       return `${h}h ${m}m ${s}s`;
-    }
-    
-    function getCurrentTimeWIB() {
-      const now = new Date();
-      return now.toLocaleString('id-ID', {
-        timeZone: 'Asia/Jakarta',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: false
-      }) + ' WIB';
     }
     
     // ==================== THERMAL HEATMAP ====================
@@ -940,7 +881,7 @@
       document.getElementById('totalFireEvents').textContent = status.fireEventCount || 0;
       document.getElementById('totalGasEvents').textContent = status.gasEventCount || 0;
       
-      // Charts - use current time for new detections
+      // Charts
       if (status.fireWarning && !lastFireWarning) {
         updateFireChart(sensors.maxTemp);
       }
@@ -952,7 +893,7 @@
       lastGasWarning = status.gasWarning;
     }
     
-    // ==================== HISTORY ====================
+    // ==================== HISTORY (NO TIMESTAMP!) ====================
     async function updateFireHistory() {
       const events = await fetchFirebase('/events/fire');
       if (!events) return;
@@ -962,7 +903,7 @@
       
       const arr = Object.values(events).reverse().slice(0, 50);
       if (arr.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; opacity: 0.6;">No events yet</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="3" style="text-align: center; opacity: 0.6;">No events yet</td></tr>';
         return;
       }
       
@@ -970,7 +911,6 @@
         const tr = document.createElement('tr');
         tr.innerHTML = `
           <td>${e.eventId}</td>
-          <td>${formatTimeWIB(e.timestamp, e.eventId)}</td>
           <td style="color: #ff6b6b; font-weight: bold;">${e.maxTemp.toFixed(1)}°C</td>
           <td><span style="color: #ff6b6b;">⚠️ Fire Detected</span></td>
         `;
@@ -987,7 +927,7 @@
       
       const arr = Object.values(events).reverse().slice(0, 50);
       if (arr.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="3" style="text-align: center; opacity: 0.6;">No events yet</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="2" style="text-align: center; opacity: 0.6;">No events yet</td></tr>';
         return;
       }
       
@@ -995,7 +935,6 @@
         const tr = document.createElement('tr');
         tr.innerHTML = `
           <td>${e.eventId}</td>
-          <td>${formatTimeWIB(e.timestamp, e.eventId)}</td>
           <td><span style="color: #ffb86c;">⚠️ Gas Detected</span></td>
         `;
         tbody.appendChild(tr);
@@ -1057,9 +996,8 @@
     }
     
     function updateFireChart(temp) {
-      const timeStr = getCurrentTimeWIB();
-      
-      fireChartData.labels.push(timeStr);
+      const count = fireChartData.labels.length + 1;
+      fireChartData.labels.push(`Event ${count}`);
       fireChartData.temps.push(temp);
       if (fireChartData.labels.length > 20) {
         fireChartData.labels.shift();
@@ -1069,9 +1007,8 @@
     }
     
     function updateGasChart() {
-      const timeStr = getCurrentTimeWIB();
-      
-      gasChartData.labels.push(timeStr);
+      const count = gasChartData.labels.length + 1;
+      gasChartData.labels.push(`Event ${count}`);
       gasChartData.detections.push(1);
       if (gasChartData.labels.length > 20) {
         gasChartData.labels.shift();
@@ -1097,8 +1034,7 @@
     
     console.log('🔥 FIGS Dashboard Ready');
     console.log('📡 Firebase:', FIREBASE_URL);
-    console.log('🕐 Timezone: WIB (Asia/Jakarta)');
-    console.log('⚡ Auto-fallback: Invalid timestamps → Current time');
+    console.log('📝 Display: Event numbers only (no timestamps)');
   </script>
 </body>
 </html>
