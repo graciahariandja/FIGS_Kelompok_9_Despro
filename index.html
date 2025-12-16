@@ -460,6 +460,50 @@
       width: 100% !important;
       height: 100% !important;
     }
+
+    /* ⭐ TAMBAHAN: Button untuk Data Logger */
+    .data-logger-btn {
+      background: linear-gradient(135deg, #4ecdc4, #44a3a3);
+      margin-top: 10px;
+    }
+    
+    .data-logger-btn:hover {
+      background: linear-gradient(135deg, #44a3a3, #4ecdc4);
+      border-color: #4ecdc4;
+    }
+
+    .date-selector {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    .date-selector input {
+      background: rgba(0, 0, 0, 0.5);
+      border: 2px solid rgba(255, 140, 0, 0.3);
+      color: white;
+      padding: 10px 15px;
+      border-radius: 10px;
+      font-size: 1em;
+    }
+
+    .date-selector button {
+      background: linear-gradient(135deg, #ff6347, #ffa500);
+      color: white;
+      border: none;
+      padding: 10px 25px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.3s ease;
+    }
+
+    .date-selector button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 15px rgba(255, 140, 0, 0.4);
+    }
     
     @media (max-width: 1200px) {
       .dashboard-grid {
@@ -486,7 +530,6 @@
   <div class="connection-status" id="connectionStatus">
     🔄 Connecting to Firebase...
   </div>
-
   <div class="container">
     <!-- Landing Page -->
     <div id="landing" class="page active">
@@ -504,6 +547,9 @@
           </button>
           <button class="main-menu-btn" onclick="showPage('dashboard')">
             📊 Dashboard FIGS
+          </button>
+          <button class="main-menu-btn data-logger-btn" onclick="showPage('datalogger')">
+            📝 Data Logger (Untuk Laporan)
           </button>
         </div>
       </div>
@@ -554,6 +600,7 @@
           <p>• <strong>Real-time monitoring</strong>: Pemantauan suhu dan gas secara kontinyu<br>
           • <strong>Thermal heatmap</strong>: Visualisasi distribusi panas 8x8 pixels<br>
           • <strong>Firebase cloud storage</strong>: Data tersimpan permanen di cloud<br>
+          • <strong>Data logger</strong>: Semua data sensor terekam setiap 5 detik untuk analisis<br>
           • <strong>Remote monitoring</strong>: Dashboard bisa diakses dari mana saja<br>
           • <strong>Telegram notification</strong>: Notifikasi instant ke smartphone<br>
           • <strong>Visual & audio alarm</strong>: Peringatan melalui buzzer dan indikator visual</p>
@@ -608,9 +655,19 @@
             • Grafik monitoring temperature trends<br>
             • Bisa diakses dari device apapun (laptop, HP, tablet)</p>
           </div>
+
+          <div class="tutorial-step">
+            <h3>Step 6: Data Logger (Untuk Laporan Akhir)</h3>
+            <p>Sistem otomatis mencatat semua data sensor setiap 5 detik ke Firebase. Untuk mengakses data lengkap:<br>
+            • Buka menu <strong>Data Logger</strong> di dashboard<br>
+            • Pilih tanggal yang ingin dilihat<br>
+            • Data akan ditampilkan dalam tabel lengkap<br>
+            • Bisa di-export ke Excel untuk analisis laporan<br>
+            • Semua data ada timestamp WIB yang akurat</p>
+          </div>
           
           <div class="tutorial-step">
-            <h3>Step 6: Notifikasi Telegram</h3>
+            <h3>Step 7: Notifikasi Telegram</h3>
             <p>Jika bahaya terdeteksi, sistem akan mengirim notifikasi ke Telegram dengan informasi detail status sensor dan instruksi keamanan darurat.</p>
           </div>
           
@@ -674,6 +731,10 @@
               <div class="status-label">Gas Detection (MQ-6)</div>
               <div class="status-value" id="gasValue">Loading...</div>
             </div>
+            <div class="status-item">
+              <div class="status-label">Last Update</div>
+              <div class="status-value" id="lastUpdateTime">--</div>
+            </div>
             <div class="status-item" id="uptimeStatus">
               <div class="status-label">System Uptime</div>
               <div class="status-value" id="uptimeValue">--</div>
@@ -701,13 +762,14 @@
             <thead>
               <tr>
                 <th>#</th>
+                <th>Timestamp (WIB)</th>
                 <th>Max Temp (°C)</th>
                 <th>Status</th>
               </tr>
             </thead>
             <tbody>
               <tr>
-                <td colspan="3" style="text-align: center; opacity: 0.6;">No events yet</td>
+                <td colspan="4" style="text-align: center; opacity: 0.6;">No events yet</td>
               </tr>
             </tbody>
           </table>
@@ -725,18 +787,63 @@
             <thead>
               <tr>
                 <th>#</th>
+                <th>Timestamp (WIB)</th>
                 <th>Status</th>
               </tr>
             </thead>
             <tbody>
               <tr>
-                <td colspan="2" style="text-align: center; opacity: 0.6;">No events yet</td>
+                <td colspan="3" style="text-align: center; opacity: 0.6;">No events yet</td>
               </tr>
             </tbody>
           </table>
         </div>
         <div class="chart-container">
           <canvas id="gasChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- ⭐ DATA LOGGER PAGE (BARU!) -->
+    <div id="datalogger" class="page">
+      <button class="back-btn" onclick="showPage('landing')">← Back to Menu</button>
+      <h1 class="page-title">📝 Data Logger - Untuk Laporan Akhir</h1>
+      
+      <div class="card">
+        <h2>📅 Pilih Tanggal untuk Melihat Data</h2>
+        <div class="date-selector">
+          <label>Tanggal:</label>
+          <input type="date" id="logDateInput" value="">
+          <button onclick="loadLogData()">📊 Load Data</button>
+          <button onclick="exportLogToCSV()">💾 Export to CSV</button>
+        </div>
+
+        <div id="logStats" style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 10px; margin: 20px 0;">
+          <strong>Statistics:</strong> <span id="logStatsText">Select a date to view statistics</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>📋 Sensor Data Logger (Setiap 5 Detik)</h2>
+        <div class="table-container" style="max-height: 600px;">
+          <table id="logTable">
+            <thead>
+              <tr>
+                <th>No</th>
+                <th>Timestamp (WIB)</th>
+                <th>Max Temp (°C)</th>
+                <th>Avg Temp (°C)</th>
+                <th>Min Temp (°C)</th>
+                <th>Gas Detected</th>
+                <th>Fire Warning</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td colspan="7" style="text-align: center; opacity: 0.6;">Select a date above to load data</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
@@ -751,6 +858,7 @@
     let fireChart, gasChart;
     let lastFireWarning = false;
     let lastGasWarning = false;
+    let currentLogData = [];
     
     const fireChartData = { labels: [], temps: [] };
     const gasChartData = { labels: [], detections: [] };
@@ -764,6 +872,12 @@
       if (pageId === 'dashboard' && !window.dashboardStarted) {
         initDashboard();
         window.dashboardStarted = true;
+      }
+
+      if (pageId === 'datalogger') {
+        // Set default date to today
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('logDateInput').value = today;
       }
     }
     
@@ -846,6 +960,11 @@
       document.getElementById('connectionStatus').className = 'connection-status connected';
       document.getElementById('connectionStatus').textContent = '✅ Live Data';
       
+      // ⭐ TAMBAHAN: Tampilkan last update timestamp
+      if (sensors.timestamp) {
+        document.getElementById('lastUpdateTime').textContent = sensors.timestamp.substring(11, 19) + ' WIB';
+      }
+      
       // Temperature
       const tempStatus = document.getElementById('tempStatus');
       const tempValue = document.getElementById('tempValue');
@@ -877,16 +996,16 @@
       }
       
       // Stats
-      document.getElementById('uptimeValue').textContent = formatUptime(status.uptime);
+      document.getElementById('uptimeValue').textContent = formatUptime(status.uptimeSeconds || 0);
       document.getElementById('totalFireEvents').textContent = status.fireEventCount || 0;
       document.getElementById('totalGasEvents').textContent = status.gasEventCount || 0;
       
       // Charts
       if (status.fireWarning && !lastFireWarning) {
-        updateFireChart(sensors.maxTemp);
+        updateFireChart(sensors.maxTemp, sensors.timestamp);
       }
       if (status.gasWarning && !lastGasWarning) {
-        updateGasChart();
+        updateGasChart(sensors.timestamp);
       }
       
       lastFireWarning = status.fireWarning;
@@ -901,13 +1020,12 @@
       const tbody = document.querySelector('#fireTable tbody');
       tbody.innerHTML = '';
       
-      // Sort by eventId DESCENDING (highest/newest first)
       const arr = Object.values(events)
         .sort((a, b) => b.eventId - a.eventId)
         .slice(0, 50);
       
       if (arr.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="3" style="text-align: center; opacity: 0.6;">No events yet</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; opacity: 0.6;">No events yet</td></tr>';
         return;
       }
       
@@ -915,6 +1033,7 @@
         const tr = document.createElement('tr');
         tr.innerHTML = `
           <td>${e.eventId}</td>
+          <td>${e.timestamp || 'N/A'}</td>
           <td style="color: #ff6b6b; font-weight: bold;">${e.maxTemp.toFixed(1)}°C</td>
           <td><span style="color: #ff6b6b;">⚠️ Fire Detected</span></td>
         `;
@@ -929,13 +1048,12 @@
       const tbody = document.querySelector('#gasTable tbody');
       tbody.innerHTML = '';
       
-      // Sort by eventId DESCENDING (highest/newest first)
       const arr = Object.values(events)
         .sort((a, b) => b.eventId - a.eventId)
         .slice(0, 50);
       
       if (arr.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="2" style="text-align: center; opacity: 0.6;">No events yet</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="3" style="text-align: center; opacity: 0.6;">No events yet</td></tr>';
         return;
       }
       
@@ -943,6 +1061,7 @@
         const tr = document.createElement('tr');
         tr.innerHTML = `
           <td>${e.eventId}</td>
+          <td>${e.timestamp || 'N/A'}</td>
           <td><span style="color: #ffb86c;">⚠️ Gas Detected</span></td>
         `;
         tbody.appendChild(tr);
@@ -1003,9 +1122,9 @@
       });
     }
     
-    function updateFireChart(temp) {
-      const count = fireChartData.labels.length + 1;
-      fireChartData.labels.push(`Event ${count}`);
+    function updateFireChart(temp, timestamp) {
+      const label = timestamp ? timestamp.substring(11, 19) : `Event ${fireChartData.labels.length + 1}`;
+      fireChartData.labels.push(label);
       fireChartData.temps.push(temp);
       if (fireChartData.labels.length > 20) {
         fireChartData.labels.shift();
@@ -1014,15 +1133,120 @@
       if (fireChart) fireChart.update();
     }
     
-    function updateGasChart() {
-      const count = gasChartData.labels.length + 1;
-      gasChartData.labels.push(`Event ${count}`);
+    function updateGasChart(timestamp) {
+      const label = timestamp ? timestamp.substring(11, 19) : `Event ${gasChartData.labels.length + 1}`;
+      gasChartData.labels.push(label);
       gasChartData.detections.push(1);
       if (gasChartData.labels.length > 20) {
         gasChartData.labels.shift();
         gasChartData.detections.shift();
       }
       if (gasChart) gasChart.update();
+    }
+
+    // ==================== ⭐ DATA LOGGER FUNCTIONS ====================
+    async function loadLogData() {
+      const dateInput = document.getElementById('logDateInput').value;
+      if (!dateInput) {
+        alert('Pilih tanggal terlebih dahulu!');
+        return;
+      }
+
+      const dateKey = dateInput.replace(/-/g, ''); // 2024-12-16 → 20241216
+      const tbody = document.querySelector('#logTable tbody');
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">Loading...</td></tr>';
+
+      const data = await fetchFirebase(`/datalog/${dateKey}`);
+
+      if (!data || Object.keys(data).length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; opacity: 0.6;">No data available for this date</td></tr>';
+        document.getElementById('logStatsText').textContent = 'No data found';
+        currentLogData = [];
+        return;
+      }
+
+      // Convert to array and sort by unix timestamp (ascending = oldest first for table)
+      const entries = Object.entries(data).sort((a, b) => parseInt(a[0]) - parseInt(b[0]));
+      currentLogData = [];
+      
+      let fireCount = 0;
+      let gasCount = 0;
+      let tempSum = 0;
+      let tempMax = -999;
+      let tempMin = 999;
+
+      tbody.innerHTML = '';
+      entries.forEach(([unixTime, record], index) => {
+        const row = {
+          unixTime: unixTime,
+          timestamp: record.timestamp || 'N/A',
+          maxTemp: record.maxTemp || 0,
+          avgTemp: record.avgTemp || 0,
+          minTemp: record.minTemp || 0,
+          gasDetected: record.gasDetected || false,
+          fireWarning: record.fireWarning || false
+        };
+
+        currentLogData.push(row);
+
+        const warningClass = (row.fireWarning || row.gasDetected) ? 'warning' : '';
+
+        const tr = document.createElement('tr');
+        tr.className = warningClass;
+        tr.innerHTML = `
+          <td>${index + 1}</td>
+          <td>${row.timestamp}</td>
+          <td style="color: ${row.fireWarning ? '#ff6b6b' : '#51cf66'};">${row.maxTemp.toFixed(1)}</td>
+          <td>${row.avgTemp.toFixed(1)}</td>
+          <td>${row.minTemp.toFixed(1)}</td>
+          <td>${row.gasDetected ? '<span style="color: #ffb86c;">⚠️ YES</span>' : '<span style="color: #51cf66;">✅ No</span>'}</td>
+          <td>${row.fireWarning ? '<span style="color: #ff6b6b;">🔥 YES</span>' : '<span style="color: #51cf66;">✅ No</span>'}</td>
+        `;
+        tbody.appendChild(tr);
+
+        if (row.fireWarning) fireCount++;
+        if (row.gasDetected) gasCount++;
+        tempSum += row.avgTemp;
+        if (row.maxTemp > tempMax) tempMax = row.maxTemp;
+        if (row.minTemp < tempMin) tempMin = row.minTemp;
+      });
+
+      // Show statistics
+      const avgTemp = (tempSum / currentLogData.length).toFixed(1);
+      document.getElementById('logStatsText').innerHTML = `
+        Total Records: <strong>${currentLogData.length}</strong> | 
+        Fire Events: <strong style="color: #ff6b6b;">${fireCount}</strong> | 
+        Gas Events: <strong style="color: #ffb86c;">${gasCount}</strong> | 
+        Avg Temp: <strong>${avgTemp}°C</strong> | 
+        Max Temp: <strong>${tempMax.toFixed(1)}°C</strong> | 
+        Min Temp: <strong>${tempMin.toFixed(1)}°C</strong>
+      `;
+
+      console.log(`✅ Loaded ${currentLogData.length} records for ${dateInput}`);
+    }
+
+    function exportLogToCSV() {
+      if (currentLogData.length === 0) {
+        alert('No data to export! Load data first.');
+        return;
+      }
+
+      let csv = 'No,Timestamp (WIB),Max Temp (°C),Avg Temp (°C),Min Temp (°C),Gas Detected,Fire Warning\n';
+
+      currentLogData.forEach((row, i) => {
+        csv += `${i+1},${row.timestamp},${row.maxTemp.toFixed(1)},${row.avgTemp.toFixed(1)},${row.minTemp.toFixed(1)},`;
+        csv += `${row.gasDetected ? 'YES' : 'NO'},${row.fireWarning ? 'YES' : 'NO'}\n`;
+      });
+
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `FIGS_Data_${document.getElementById('logDateInput').value}.csv`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+
+      console.log('✅ CSV exported successfully!');
     }
     
     // ==================== DASHBOARD INIT ====================
@@ -1042,7 +1266,9 @@
     
     console.log('🔥 FIGS Dashboard Ready');
     console.log('📡 Firebase:', FIREBASE_URL);
-    console.log('📝 Event ordering: Newest first (descending by eventId)');
+    console.log('📝 Data Logger: Every 5 seconds');
+    console.log('📊 Event ordering: Newest first (descending by eventId)');
   </script>
 </body>
 </html>
+```
